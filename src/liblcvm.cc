@@ -381,6 +381,20 @@ float calculate_standard_deviation(const std::vector<float> &vec) {
   return std::sqrt(sum_squares / (vec.size() - 1));
 }
 
+// https://en.wikipedia.org/wiki/Median_absolute_deviation
+float calculate_median_absolute_deviation(std::vector<float> &vec) {
+  // \tilde(X): median(vec)
+  float median = calculate_median(vec);
+  // |Xi - \tilde(X)|: vector of absolute differences to the median
+  std::vector<float> vec_abs_differences(vec.size());
+  for (size_t i = 0; i < vec.size(); i++) {
+    vec_abs_differences[i] = abs(vec[i] - median);
+  }
+  // MAD = median(|Xi - \tilde(X)|)
+  float mad = calculate_median(vec_abs_differences);
+  return mad;
+}
+
 int derive_timing_info(struct TimingInformation &timing, bool sort_by_pts,
                        int debug) {
   // 1. set the frame_num_orig_list vector
@@ -435,21 +449,11 @@ int derive_timing_info(struct TimingInformation &timing, bool sort_by_pts,
   // 3.2. calculate the duration average/median
   timing.pts_sec_duration_average = calculate_average(pts_sec_duration_list);
   timing.pts_sec_duration_median = calculate_median(pts_sec_duration_list);
-  // 3.3. calculate the delta to the average (inc. absolute)
-  std::vector<float> pts_delta_sec_average_list(pts_sec_duration_list.size());
-  std::vector<float> pts_delta_abs_sec_average_list(
-      pts_sec_duration_list.size());
-  for (size_t i = 0; i < pts_sec_duration_list.size(); i++) {
-    pts_delta_sec_average_list[i] =
-        pts_sec_duration_list[i] - timing.pts_sec_duration_average;
-    pts_delta_abs_sec_average_list[i] = abs(pts_delta_sec_average_list[i]);
-  }
-  // 3.4. calculate the delta average and stddev
-  timing.pts_delta_sec_stddev =
-      calculate_standard_deviation(pts_delta_sec_average_list);
-  // 3.5. calculate the abs delta median
-  timing.pts_delta_abs_sec_median =
-      calculate_median(pts_delta_abs_sec_average_list);
+  // 3.3. calculate the duration stddev and median absolute difference (MAD)
+  timing.pts_sec_duration_stddev =
+      calculate_standard_deviation(pts_sec_duration_list);
+  timing.pts_sec_duration_mad =
+      calculate_median_absolute_deviation(pts_sec_duration_list);
 
   // 4. derive pts duration values
   timing.pts_duration_sec_list.clear();
@@ -801,8 +805,8 @@ int get_video_freeze_info(const struct IsobmffFileInformation &info,
                           uint32_t *timescale_audio_hz,
                           float *pts_sec_duration_average,
                           float *pts_sec_duration_median,
-                          float *pts_delta_sec_stddev,
-                          float *pts_delta_abs_sec_median, int debug) {
+                          float *pts_sec_duration_stddev,
+                          float *pts_sec_duration_mad, int debug) {
   // 0. init values
   *duration_video_sec = info.timing.duration_video_sec;
   *duration_audio_sec = info.timing.duration_audio_sec;
@@ -810,8 +814,8 @@ int get_video_freeze_info(const struct IsobmffFileInformation &info,
   *timescale_audio_hz = info.timing.timescale_audio_hz;
   *pts_sec_duration_average = info.timing.pts_sec_duration_average;
   *pts_sec_duration_median = info.timing.pts_sec_duration_median;
-  *pts_delta_sec_stddev = info.timing.pts_delta_sec_stddev;
-  *pts_delta_abs_sec_median = info.timing.pts_delta_abs_sec_median;
+  *pts_sec_duration_stddev = info.timing.pts_sec_duration_stddev;
+  *pts_sec_duration_mad = info.timing.pts_sec_duration_mad;
 
   // 1. check both audio and video tracks, and video track at least 2 seconds
   if (*duration_video_sec == -1.0) {

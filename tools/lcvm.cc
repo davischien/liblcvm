@@ -69,7 +69,7 @@ int parse_files(std::vector<std::string> &infile_list, char *outfile,
           "video_freeze_ratio,duration_video_sec,duration_audio_sec,"
           "timescale_video_hz,timescale_audio_hz,"
           "pts_sec_duration_average,pts_sec_duration_median,"
-          "pts_delta_sec_stddev,pts_delta_abs_sec_median,"
+          "pts_sec_duration_stddev,pts_sec_duration_mad,"
           "frame_drop_count,frame_drop_ratio,"
           "normalized_frame_drop_average_length,"
           "frame_drop_length_percentile_50,frame_drop_length_percentile_90,"
@@ -133,13 +133,13 @@ int parse_files(std::vector<std::string> &infile_list, char *outfile,
     uint32_t timescale_audio_hz;
     float pts_sec_duration_average;
     float pts_sec_duration_median;
-    float pts_delta_sec_stddev;
-    float pts_delta_abs_sec_median;
+    float pts_sec_duration_stddev;
+    float pts_sec_duration_mad;
     ret = get_video_freeze_info(
         info, &video_freeze, &audio_video_ratio, &duration_video_sec,
         &duration_audio_sec, &timescale_video_hz, &timescale_audio_hz,
         &pts_sec_duration_average, &pts_sec_duration_median,
-        &pts_delta_sec_stddev, &pts_delta_abs_sec_median, debug);
+        &pts_sec_duration_stddev, &pts_sec_duration_mad, debug);
     if (ret < 0) {
       fprintf(stderr, "error: get_video_freeze_info() in %s\n", infile.c_str());
       continue;
@@ -212,8 +212,8 @@ int parse_files(std::vector<std::string> &infile_list, char *outfile,
     fprintf(outfp, ",%u", timescale_audio_hz);
     fprintf(outfp, ",%f", pts_sec_duration_average);
     fprintf(outfp, ",%f", pts_sec_duration_median);
-    fprintf(outfp, ",%f", pts_delta_sec_stddev);
-    fprintf(outfp, ",%f", pts_delta_abs_sec_median);
+    fprintf(outfp, ",%f", pts_sec_duration_stddev);
+    fprintf(outfp, ",%f", pts_sec_duration_mad);
     fprintf(outfp, ",%i", frame_drop_count);
     fprintf(outfp, ",%f", frame_drop_ratio);
     fprintf(outfp, ",%f", normalized_frame_drop_average_length);
